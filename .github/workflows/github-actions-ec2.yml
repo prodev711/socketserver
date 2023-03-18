@@ -20,7 +20,7 @@ jobs:
       - name: Setting environment variables..
         run: |
           echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
-          echo "AWS_SG_ID=sg-04620be6fb667433d" >> $GITHUB_ENV
+          echo "AWS_SG_ID=sg-013f70ad13a9b7c94" >> $GITHUB_ENV
           echo "TARGET_DIR_FRONTEND=${{ secrets.TARGET_DIR_FRONTEND }}" >> $GITHUB_ENV
       - name: Add Github Actions IP to Security group
         run: |
@@ -45,7 +45,6 @@ jobs:
           script: |
             cd ${{ env.TARGET_DIR_FRONTEND }}
             npm install
-            npm run build
       - name: Remove Github Actions IP from security group
         run: |
           aws ec2 revoke-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
@@ -95,7 +94,6 @@ jobs:
           script: |
             cd ${{ env.TARGET_DIR_FRONTEND }}
             npm install install
-            npm run build
       - name: Remove Github Actions IP from security group
         run: |
           aws ec2 revoke-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
