@@ -21,7 +21,7 @@ jobs:
         run: |
           echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
           echo "AWS_SG_ID=sg-013f70ad13a9b7c94" >> $GITHUB_ENV
-          echo "TARGET_DIR_FRONTEND=${{ secrets.TARGET_DIR_FRONTEND }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=${{ secrets.TARGET_DIR }}" >> $GITHUB_ENV
       - name: Add Github Actions IP to Security group
         run: |
           aws ec2 authorize-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
@@ -35,7 +35,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.VULVE_HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR_FRONTEND }}
+          TARGET: ${{ secrets.TARGET_DIR }}
       - name: Run SSH commands
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ${{ env.TARGET_DIR_FRONTEND }}
+            cd ${{ env.TARGET_DIR }}
             npm install
       - name: Remove Github Actions IP from security group
         run: |
@@ -61,8 +61,6 @@ jobs:
     steps:
       - name: Checkout the files
         uses: actions/checkout@v3
-        with:
-          persist-credentials: false
       - name: Get Github action IP
         id: ip
         uses: haythem/public-ip@v1.2
@@ -70,7 +68,7 @@ jobs:
         run: |
           echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
           echo "AWS_SG_ID=sg-013f70ad13a9b7c94" >> $GITHUB_ENV
-          echo "TARGET_DIR_FRONTEND=${{ secrets.TARGET_DIR_FRONTEND }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=${{ secrets.TARGET_DIR }}" >> $GITHUB_ENV
       - name: Add Github Actions IP to Security group
         run: |
           aws ec2 authorize-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
@@ -84,7 +82,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.VULVE_HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR_FRONTEND }}
+          TARGET: ${{ secrets.TARGET_DIR }}
       - name: Run SSH commands
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -92,7 +90,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ${{ env.TARGET_DIR_FRONTEND }}
+            cd ${{ env.TARGET_DIR }}
             npm install install
       - name: Remove Github Actions IP from security group
         run: |
