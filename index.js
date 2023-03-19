@@ -2,12 +2,14 @@ if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
 const express = require('express');
-const mongoose = require('mongoose');
-const Router = require("./routes/login");
-const userModel = require('./models/User');
 const service = require('./services');
 
+const loginRouter = require('./routes/login');
+const vulveRouter = require('./routes/vulve');
+
 /************************************** MongoDB Connection **********************************/
+const mongoose = require('mongoose');
+
 mongoose.connect(`mongodb+srv://${process.env.mongousername}:${process.env.password}@${process.env.cluster}.mongodb.net/${process.env.dbname}?retryWrites=true&w=majority`,{});
 
 const db=mongoose.connection;
@@ -27,49 +29,12 @@ const http = require("http").createServer(app);
 const cors = require('cors');
 
 app.use(cors({origin:"*"}));
-
 /**********************************SIMPLE     API      ROUTE************************************* */
 app.get("/api",(req,res) => {
     res.json(chatRooms);
 });
-app.post("/login",(req,res) => {
-    const {username, password} = req.body ;
-    console.log(userModel);
-    return ;
-    try{
-        const userRow = userModel.findOne({email: username, password: password }).exec(async data => {
-            res.json(await data);
-        })
-    } catch (error) {
-        res.status(500).send(error);
-    }
-    
-});
-app.post("/signup", async(req,response) => {
-    console.log(req.body);
-    const {username, email, password} = req.body ;
-    try {
-        const userRow = userModel.find({email: email},async(err,res)=>{
-            console.log("find");
-            if ( err ){
-                response.json({status:"fail"});
-            }
-            response.json({status:"exist"});
-        })
-    } catch(e) {
-        console.log("not find");
-        const txt = e.message ;
-        console.log(txt);
-        if ( txt.search("no longer accepts a callback") >= 0 ){
-            const user = new userModel(req.body);
-            user.save().then( (data) => {
-                response.json({status:"success", id: data.id})
-            }).catch((e) => {
-                response.json({status:"fail"});
-            })
-        }        
-    }
-})
+app.use("/",loginRouter);
+app.use("/",vulveRouter);
 /**************************************   END         ********************************* */
 
 
@@ -105,6 +70,14 @@ socketIO.on('connection', async (socket) => {
         }
         console.log(`Client disconnected: ${socket.id}`);
     });
+    socket.on('changeFlow_from_front',async(payload) => {
+        const result = await service.vulveService.statusChange(payload);        
+        if (result.vulveName == undefined){
+            socketIO.to(socket.id).emit("change_flow_error", "not updated");
+        } else {
+            socketIO.to(result['s_device_id']).emit("change_flow",result['flowValue']);
+        }
+    })
 });
 /***************************        End Socket Phase **********************************/
 
