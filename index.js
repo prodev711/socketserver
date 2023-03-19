@@ -59,6 +59,7 @@ socketIO.on('connection', async (socket) => {
             is_online : true
         };
         const result = await service.vulveService.check_register(data);
+        console.log(result);
         if ( result?.s_user_id ){
             socketIO.to(result.s_user_id).emit("connected_device",result);
         }
@@ -72,6 +73,7 @@ socketIO.on('connection', async (socket) => {
     });
     socket.on('changeFlow_from_front',async(payload) => {
         const result = await service.vulveService.statusChange(payload);        
+        console.log(result);
         if (result.vulveName == undefined){
             socketIO.to(socket.id).emit("change_flow_error", "not updated");
         } else {
