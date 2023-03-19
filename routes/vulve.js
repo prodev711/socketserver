@@ -6,7 +6,6 @@ router.get('/vulves/:vulveName',async(req,response) => {
     const param = {
         vulveName : req.params.vulveName
     }
-    console.log(param);
     try{
         const result = await service.vulveService.getVulve(param);
         if(result.length > 0){
@@ -28,7 +27,6 @@ router.get('/vulves/:_id/:s_user_id',async(req,response) => {
         _id : req.params._id,
         s_user_id : req.params.s_user_id
     }
-    console.log(param);
     if ( param['s_user_id'] == undefined ){
         response.status(400).json({
             message: "Error: Front socket error",
@@ -46,7 +44,6 @@ router.get('/vulves/:_id/:s_user_id',async(req,response) => {
 
 router.post('/vulves',async(req,response) => {
     const vulveDTO = req.body ;
-    console.log(vulveDTO);
     try{
         const result = await service.vulveService.saveVulve(vulveDTO);
         response.json(result);
