@@ -71,11 +71,23 @@ const saveVulve = async(vulveDTO) => {
     }
 }
 
+const deleteVulve = async(vulveName) => {
+    return await vulve.findOneAndUpdate({vulveName: vulveName},{s_user_id:'',userId:''},{new:true});
+}
+
+const formatOpenVulve = async(userId) => {
+    const res = await vulve.updateMany({userId:userId},{flowValue:0});
+    const result = await vulve.find({userId:userId});
+    return result ;
+}
+
 module.exports = {
     check_register,
     disConnect,
     statusChange,
     getVulves,
     getVulve,
-    saveVulve
+    saveVulve,
+    deleteVulve,
+    formatOpenVulve
 }

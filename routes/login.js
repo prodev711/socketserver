@@ -4,10 +4,9 @@ const router = express.Router();
 const service = require('./../services');
 
 //********************* When user login ***************************/
-router.get("/login", async(req,response) => {
-    const {email, password} = req.body ;
-    console.log(email);
-    console.log(password);
+router.get("/login/:email/:password", async(req,response) => {
+    const {email, password} = req.params ;
+    console.log(req.params);
     try{
         const states = await service.userService.loginUser({
             email : email,
@@ -36,7 +35,6 @@ router.get("/login", async(req,response) => {
 router.post("/login", async(req,response) => {
     const signupDTO = req.body ;
     const email = signupDTO.email ;
-    console.log(signupDTO);
     try{
         const existUser = await service.userService.existUser(email);
         if ( existUser > 0 ) {
