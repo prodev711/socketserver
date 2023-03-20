@@ -24,6 +24,10 @@ const check_register = async(deviceDTO) => {
 const disConnect = async(deviceId) => {
     return await vulve.findOneAndUpdate({s_device_id:deviceId},{is_online:false},{new:true});
 }
+const disConnectApp = async(appId) => {
+    await vulve.updateMany({s_user_id:appId,is_online:true},{flowValue:0});
+    return await vulve.find({s_user_id:appId,is_online:true});
+}
 const statusChange = async(changeData) => {
     const vulveName = changeData.vulveName;
     const data = {
@@ -52,23 +56,19 @@ const saveVulve = async(vulveDTO) => {
     const device = await vulve.find({vulveName: vulveName});
     if ( device.length > 0 ){
         try{
-            const updateVulve =  await vulve.findOneAndUpdate({vulveName: vulveName},vulveDTO,{new:true});
-            return updateVulve ;
+            if ( device[0].userId == undefined || device[0].userId == "" ){
+                const updateVulve =  await vulve.findOneAndUpdate({vulveName: vulveName},vulveDTO,{new:true});
+                return updateVulve ;
+            } else {
+                return {'result':'existdevice'} ;
+            }
         } catch(err) {
             return err ;
         }
-    } else {
-        const saveData = {
-            ...vulveDTO,
-            is_online: false
-        }
-        const newVulve = await new vulve(saveData);
-        try{
-            return newVulve.save();
-        } catch(err){
-            return err;
-        }
     }
+    return {
+        'result' : 'nodevice' 
+    };
 }
 
 const deleteVulve = async(vulveName) => {
@@ -84,6 +84,7 @@ const formatOpenVulve = async(userId) => {
 module.exports = {
     check_register,
     disConnect,
+    disConnectApp,
     statusChange,
     getVulves,
     getVulve,

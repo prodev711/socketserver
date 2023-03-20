@@ -49,37 +49,46 @@ socketIO.on('connection', async (socket) => {
     console.log(`Incoming connection from ${socket.id}`);
     // Send to the connected user
     socketIO.to(socket.id).emit('connected', "0");
-    socket.on('register',async (payload) => {
-        const IP_vulveID = payload.split(":");
-        console.log(IP_vulveID);
+    socket.on('register',async (vulveName) => {
+        const remoteAddress = socket.request.connection.remoteAddress;
         const data = {
-            vulveName: IP_vulveID[1],
-            vulveIp: IP_vulveID[0],
+            vulveName: vulveName,
+            vulveIp: remoteAddress,
             s_device_id : socket.id,
             is_online : true
         };
         const result = await service.vulveService.check_register(data);
-        console.log(result);
         if ( result?.s_user_id ){
             socketIO.to(result.s_user_id).emit("connected_device",result);
+        }
+    })
+    socket.on('formatvulves',async(payload) => {
+        for ( var i = 0 ; i < payload.length ; i ++ ){
+            if ( payload[i].s_device_id == undefined ) continue ;
+            socketIO.to(payload[i].s_device_id).emit('value',0);
         }
     })
     socket.on('disconnect', async () => {
         const result = await service.vulveService.disConnect(socket.id) ;
         if (result?.s_user_id != undefined){
             socketIO.to(result.s_user_id).emit("disconnected_device",result);
+        } else {
+            const reverse = await service.vulveService.disConnectApp(socket.id);
+            for ( var i = 0 ; i < reverse.length ; i ++ ){
+                socketIO.to(reverse[i].s_device_id).emit('value',0);
+            }
         }
         console.log(`Client disconnected: ${socket.id}`);
     });
     socket.on('changeFlow_from_front',async(payload) => {
         const result = await service.vulveService.statusChange(payload);        
-        console.log(result);
         if (result.vulveName == undefined){
             socketIO.to(socket.id).emit("change_flow_error", "not updated");
         } else {
-            socketIO.to(result['s_device_id']).emit("change_flow",result['flowValue']);
+            socketIO.to(result['s_device_id']).emit("value",result['flowValue']);
         }
-    })
+    });
+    
 });
 /***************************        End Socket Phase **********************************/
 
