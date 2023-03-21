@@ -72,7 +72,7 @@ const saveVulve = async(vulveDTO) => {
 }
 
 const deleteVulve = async(vulveName) => {
-    return await vulve.findOneAndUpdate({vulveName: vulveName},{s_user_id:'',userId:''},{new:true});
+    return await vulve.findOneAndUpdate({vulveName: vulveName},{s_user_id:'',userId:'',flowValue:0},{new:true});
 }
 
 const formatOpenVulve = async(userId) => {

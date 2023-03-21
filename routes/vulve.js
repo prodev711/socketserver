@@ -54,33 +54,4 @@ router.post('/vulves',async(req,response) => {
     }
 })
 
-router.delete('/vulves/:vulveName',async(req,response) => {
-    const vulveName = req.params.vulveName ;
-    try{
-        const result = await service.vulveService.deleteVulve(vulveName);
-        if ( result != null ){
-            response.json({result : true});
-        } else {
-            response.status(400).json({
-                message:"Error: there are some problem at server side"
-            })
-        }
-    } catch(error) {
-        response.status(400).json({
-            message:"Error: there are some problem at server side"
-        })
-    }
-})
-router.put('/vulves/:userId',async(req,response) => {
-    const userId = req.params.userId ;
-    try{
-        const result = await service.vulveService.formatOpenVulve(userId);
-        response.json(result);
-    } catch(error) {
-        response.status(400).json({
-            message:"Error: there are some problem at server side"
-        })
-    }
-})
-
 module.exports = router ;

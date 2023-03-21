@@ -33,6 +33,42 @@ app.use(cors({origin:"*"}));
 app.get("/api",(req,res) => {
     res.json(chatRooms);
 });
+
+app.delete('/vulves/:vulveName',async(req,response) => {
+    const vulveName = req.params.vulveName ;
+    try{
+        const result = await service.vulveService.deleteVulve(vulveName);
+        if ( result != null ){
+            socketIO.to(result.s_device_id).emit('value',0);
+            response.json({result : true});
+        } else {
+            response.status(400).json({
+                message:"Error: there are some problem at server side"
+            })
+        }
+    } catch(error) {
+        response.status(400).json({
+            message:"Error: there are some problem at server side"
+        })
+    }
+})
+
+app.put('/vulves/:userId',async(req,response) => {
+    const userId = req.params.userId ;
+    try{
+        const result = await service.vulveService.formatOpenVulve(userId);
+        for ( var i = 0 ; i < result.length ; i ++ ){
+            if ( result[i].s_device_id == undefined ) continue ;
+            socketIO.to(result[i].s_device_id).emit('value',0);
+        }
+        response.json({message:"true"});
+    } catch(error) {
+        response.status(400).json({
+            message:"Error: there are some problem at server side"
+        })
+    }
+})
+
 app.use("/",loginRouter);
 app.use("/",vulveRouter);
 /**************************************   END         ********************************* */
@@ -62,12 +98,6 @@ socketIO.on('connection', async (socket) => {
             socketIO.to(result.s_user_id).emit("connected_device",result);
         }
     })
-    socket.on('formatvulves',async(payload) => {
-        for ( var i = 0 ; i < payload.length ; i ++ ){
-            if ( payload[i].s_device_id == undefined ) continue ;
-            socketIO.to(payload[i].s_device_id).emit('value',0);
-        }
-    })
     socket.on('disconnect', async () => {
         const result = await service.vulveService.disConnect(socket.id) ;
         if (result?.s_user_id != undefined){
@@ -92,6 +122,7 @@ socketIO.on('connection', async (socket) => {
 });
 /***************************        End Socket Phase **********************************/
 
+module.exports = {socketIO};
 
 http.listen(process.env.PORT,()=>{
     console.log(`Server listening on ${process.env.PORT}`);
