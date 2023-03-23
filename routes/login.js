@@ -1,4 +1,3 @@
-// const client = require('twilio')(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
 const express = require('express');
 const router = express.Router();
 const service = require('./../services');
@@ -6,7 +5,6 @@ const service = require('./../services');
 //********************* When user login ***************************/
 router.get("/login/:email/:password", async(req,response) => {
     const {email, password} = req.params ;
-    console.log(req.params);
     try{
         const states = await service.userService.loginUser({
             email : email,
