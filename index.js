@@ -87,6 +87,7 @@ socketIO.on('connection', async (socket) => {
     socketIO.to(socket.id).emit('connected', "0");
     socket.on('register',async (vulveName) => {
         const remoteAddress = socket.request.connection.remoteAddress;
+        console.log(remoteAddress);
         const data = {
             vulveName: vulveName,
             vulveIp: remoteAddress,
