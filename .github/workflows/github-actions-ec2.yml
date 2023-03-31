@@ -1,0 +1,104 @@
+name: Push-to-EC2
+
+on:
+  push:
+    branches:
+      - main
+      - development
+jobs:
+  production-deploy:
+    name: Deploy to EC2 on main branch push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+      - name: Get Github action IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+      - name: Setting environment variables..
+        run: |
+          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+          echo "AWS_SG_ID=sg-04620be6fb667433d" >> $GITHUB_ENV
+          echo "TARGET_DIR_FRONTEND=${{ secrets.TARGET_DIR_FRONTEND }}" >> $GITHUB_ENV
+      - name: Add Github Actions IP to Security group
+        run: |
+          aws ec2 authorize-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_DEFAULT_REGION }}
+      - name: Deploy to PROD Server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.VULVE_HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR_FRONTEND }}
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VULVE_HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ env.TARGET_DIR_FRONTEND }}
+            npm install
+      - name: Remove Github Actions IP from security group
+        run: |
+          aws ec2 revoke-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_DEFAULT_REGION }}
+        if: always()
+  development-deploy:
+    name: Deploy to EC2 on development branch push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development'
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Get Github action IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+      - name: Setting environment variables..
+        run: |
+          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+          echo "AWS_SG_ID=sg-013f70ad13a9b7c94" >> $GITHUB_ENV
+          echo "TARGET_DIR_FRONTEND=${{ secrets.TARGET_DIR_FRONTEND }}" >> $GITHUB_ENV
+      - name: Add Github Actions IP to Security group
+        run: |
+          aws ec2 authorize-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_DEFAULT_REGION }}
+      - name: Deploy to development Server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.VULVE_HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR_FRONTEND }}
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VULVE_HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ env.TARGET_DIR_FRONTEND }}
+            npm install
+      - name: Remove Github Actions IP from security group
+        run: |
+          aws ec2 revoke-security-group-ingress --group-id ${{ env.AWS_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_DEFAULT_REGION }}
+        if: always()
