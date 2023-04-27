@@ -87,7 +87,6 @@ socketIO.on('connection', async (socket) => {
     socketIO.to(socket.id).emit('connected', "0");
     socket.on('register',async (vulveName) => {
         const remoteAddress = socket.request.connection.remoteAddress;
-        console.log(remoteAddress);
         const data = {
             vulveName: vulveName,
             vulveIp: remoteAddress,
@@ -101,14 +100,29 @@ socketIO.on('connection', async (socket) => {
     })
     socket.on('disconnect', async () => {
         const result = await service.vulveService.disConnect(socket.id) ;
-        if (result?.s_user_id != undefined){
-            socketIO.to(result.s_user_id).emit("disconnected_device",result);
+        console.log(result);
+        if ( result.type == 0 ){
+            const user = result.data;
+            if ( user?.s_user_id != undefined ){
+                socketIO.to(user.s_user_id).emit('disconnected_wifi',user);
+            }
         } else {
-            const reverse = await service.vulveService.disConnectApp(socket.id);
-            for ( var i = 0 ; i < reverse.length ; i ++ ){
-                socketIO.to(reverse[i].s_device_id).emit('value',0);
+            const device = result.data;
+            if ( device?.s_user_id != undefined ){
+                socketIO.to(device.s_user_id).emit('disconnected_device',device);
             }
         }
+        // if (result?.s_user_id != undefined){
+        //     socketIO.to(result.s_user_id).emit("disconnected_device",result);
+        // } else if ( result == "disconnect_WiFi" ){
+        //     socketIO.to(result.s_user_id).emit('disconnected_wifi',result);
+        // }
+        // else {
+        //     const reverse = await service.vulveService.disConnectApp(socket.id);
+        //     for ( var i = 0 ; i < reverse.length ; i ++ ){
+        //         socketIO.to(reverse[i].s_device_id).emit('value',0);
+        //     }
+        // }
         console.log(`Client disconnected: ${socket.id}`);
     });
     socket.on('changeFlow_from_front',async(payload) => {

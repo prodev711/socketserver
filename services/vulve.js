@@ -22,7 +22,12 @@ const check_register = async(deviceDTO) => {
     }
 }
 const disConnect = async(deviceId) => {
-    return await vulve.findOneAndUpdate({s_device_id:deviceId},{is_online:false},{new:true});
+    const userExists = await vulve.findOne({ s_user_id: deviceId }); // returns true or false
+    if (userExists) {
+      return {'type':0, 'data' : userExists};
+    }
+    const deviceExists = await vulve.findOneAndUpdate({s_device_id:deviceId},{is_online:false},{new:true});
+    return  {'type': 1, 'data': deviceExists};
 }
 const disConnectApp = async(appId) => {
     await vulve.updateMany({s_user_id:appId,is_online:true},{flowValue:0});
