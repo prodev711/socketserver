@@ -33,6 +33,42 @@ app.use(cors({origin:"*"}));
 app.get("/api",(req,res) => {
     res.json(chatRooms);
 });
+
+app.delete('/vulves/:vulveName',async(req,response) => {
+    const vulveName = req.params.vulveName ;
+    try{
+        const result = await service.vulveService.deleteVulve(vulveName);
+        if ( result != null ){
+            socketIO.to(result.s_device_id).emit('value',0);
+            response.json({result : true});
+        } else {
+            response.status(400).json({
+                message:"Error: there are some problem at server side"
+            })
+        }
+    } catch(error) {
+        response.status(400).json({
+            message:"Error: there are some problem at server side"
+        })
+    }
+})
+
+app.put('/vulves/:userId',async(req,response) => {
+    const userId = req.params.userId ;
+    try{
+        const result = await service.vulveService.formatOpenVulve(userId);
+        for ( var i = 0 ; i < result.length ; i ++ ){
+            if ( result[i].s_device_id == undefined ) continue ;
+            socketIO.to(result[i].s_device_id).emit('value',0);
+        }
+        response.json({message:"true"});
+    } catch(error) {
+        response.status(400).json({
+            message:"Error: there are some problem at server side"
+        })
+    }
+})
+
 app.use("/",loginRouter);
 app.use("/",vulveRouter);
 /**************************************   END         ********************************* */
@@ -49,12 +85,11 @@ socketIO.on('connection', async (socket) => {
     console.log(`Incoming connection from ${socket.id}`);
     // Send to the connected user
     socketIO.to(socket.id).emit('connected', "0");
-    socket.on('register',async (payload) => {
-        const IP_vulveID = payload.split(":");
-        console.log(IP_vulveID);
+    socket.on('register',async (vulveName) => {
+        const remoteAddress = socket.request.connection.remoteAddress;
         const data = {
-            vulveName: IP_vulveID[1],
-            vulveIp: IP_vulveID[0],
+            vulveName: vulveName,
+            vulveIp: remoteAddress,
             s_device_id : socket.id,
             is_online : true
         };
@@ -65,9 +100,29 @@ socketIO.on('connection', async (socket) => {
     })
     socket.on('disconnect', async () => {
         const result = await service.vulveService.disConnect(socket.id) ;
-        if (result?.s_user_id != undefined){
-            socketIO.to(result.s_user_id).emit("disconnected_device",result);
+        console.log(result);
+        if ( result.type == 0 ){
+            const user = result.data;
+            if ( user?.s_user_id != undefined ){
+                socketIO.to(user.s_user_id).emit('disconnected_wifi',user);
+            }
+        } else {
+            const device = result.data;
+            if ( device?.s_user_id != undefined ){
+                socketIO.to(device.s_user_id).emit('disconnected_device',device);
+            }
         }
+        // if (result?.s_user_id != undefined){
+        //     socketIO.to(result.s_user_id).emit("disconnected_device",result);
+        // } else if ( result == "disconnect_WiFi" ){
+        //     socketIO.to(result.s_user_id).emit('disconnected_wifi',result);
+        // }
+        // else {
+        //     const reverse = await service.vulveService.disConnectApp(socket.id);
+        //     for ( var i = 0 ; i < reverse.length ; i ++ ){
+        //         socketIO.to(reverse[i].s_device_id).emit('value',0);
+        //     }
+        // }
         console.log(`Client disconnected: ${socket.id}`);
     });
     socket.on('changeFlow_from_front',async(payload) => {
@@ -75,12 +130,14 @@ socketIO.on('connection', async (socket) => {
         if (result.vulveName == undefined){
             socketIO.to(socket.id).emit("change_flow_error", "not updated");
         } else {
-            socketIO.to(result['s_device_id']).emit("change_flow",result['flowValue']);
+            socketIO.to(result['s_device_id']).emit("value",result['flowValue']);
         }
-    })
+    });
+    
 });
 /***************************        End Socket Phase **********************************/
 
+module.exports = {socketIO};
 
 http.listen(process.env.PORT,()=>{
     console.log(`Server listening on ${process.env.PORT}`);

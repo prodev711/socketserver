@@ -22,7 +22,16 @@ const check_register = async(deviceDTO) => {
     }
 }
 const disConnect = async(deviceId) => {
-    return await vulve.findOneAndUpdate({s_device_id:deviceId},{is_online:false},{new:true});
+    const userExists = await vulve.findOne({ s_user_id: deviceId }); // returns true or false
+    if (userExists) {
+      return {'type':0, 'data' : userExists};
+    }
+    const deviceExists = await vulve.findOneAndUpdate({s_device_id:deviceId},{is_online:false},{new:true});
+    return  {'type': 1, 'data': deviceExists};
+}
+const disConnectApp = async(appId) => {
+    await vulve.updateMany({s_user_id:appId,is_online:true},{flowValue:0});
+    return await vulve.find({s_user_id:appId,is_online:true});
 }
 const statusChange = async(changeData) => {
     const vulveName = changeData.vulveName;
@@ -52,30 +61,39 @@ const saveVulve = async(vulveDTO) => {
     const device = await vulve.find({vulveName: vulveName});
     if ( device.length > 0 ){
         try{
-            const updateVulve =  await vulve.findOneAndUpdate({vulveName: vulveName},vulveDTO,{new:true});
-            return updateVulve ;
+            if ( device[0].userId == undefined || device[0].userId == "" ){
+                const updateVulve =  await vulve.findOneAndUpdate({vulveName: vulveName},vulveDTO,{new:true});
+                return updateVulve ;
+            } else {
+                return {'result':'existdevice'} ;
+            }
         } catch(err) {
             return err ;
         }
-    } else {
-        const saveData = {
-            ...vulveDTO,
-            is_online: false
-        }
-        const newVulve = await new vulve(saveData);
-        try{
-            return newVulve.save();
-        } catch(err){
-            return err;
-        }
     }
+    return {
+        'result' : 'nodevice' 
+    };
+}
+
+const deleteVulve = async(vulveName) => {
+    return await vulve.findOneAndUpdate({vulveName: vulveName},{s_user_id:'',userId:'',flowValue:0},{new:true});
+}
+
+const formatOpenVulve = async(userId) => {
+    const res = await vulve.updateMany({userId:userId},{flowValue:0});
+    const result = await vulve.find({userId:userId});
+    return result ;
 }
 
 module.exports = {
     check_register,
     disConnect,
+    disConnectApp,
     statusChange,
     getVulves,
     getVulve,
-    saveVulve
+    saveVulve,
+    deleteVulve,
+    formatOpenVulve
 }
